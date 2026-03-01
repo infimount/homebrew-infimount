@@ -1,0 +1,51 @@
+name: Update Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional release version (e.g. 0.1.0-alpha.12)
+        required: false
+        type: string
+  repository_dispatch:
+    types: [infimount-release]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Resolve version input
+        id: resolve
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "value=${{ github.event.client_payload.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update formula
+        id: formula
+        run: ./scripts/update-formula.sh "${{ steps.resolve.outputs.value }}"
+
+      - name: Commit and push
+        run: |
+          if git diff --quiet; then
+            echo "No formula changes"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/infimount.rb
+          git commit -m "chore(formula): update infimount to v${{ steps.formula.outputs.version }}"
+          git push
