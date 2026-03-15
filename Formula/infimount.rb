@@ -1,13 +1,12 @@
 class Infimount < Formula
   desc "Desktop file and object storage explorer"
   homepage "https://github.com/infimount/infimount"
+  url "https://github.com/infimount/infimount/releases/download/v0.2.1/Infimount-amd64.deb"
+  version "0.2.1"
+  sha256 "bffe9c3d9f9466a1592d53fa50b934e8776c038bf857dce0ccd2485ba91a7896"
   license "MIT"
-  version "0.2.0"
 
   depends_on :linux
-
-  url "https://github.com/infimount/infimount/releases/download/v0.2.0/Infimount-amd64.deb"
-  sha256 "07c34d2bef1b20b59dafb919646c15405629e770d24e37f8fa10c52e9bee5ee4"
 
   def install
     system "ar", "x", "Infimount-amd64.deb"
@@ -21,9 +20,7 @@ class Infimount < Formula
     end
 
     bin.install "usr/bin/infimount"
-    if Dir.exist?("usr/share")
-      share.install Dir["usr/share/*"]
-    end
+    share.install Dir["usr/share/*"] if Dir.exist?("usr/share")
   end
 
   def caveats
