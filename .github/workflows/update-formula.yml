@@ -33,19 +33,19 @@ jobs:
             echo "value=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Update formula
+      - name: Update formula and cask
         id: formula
         run: ./scripts/update-formula.sh "${{ steps.resolve.outputs.value }}"
 
       - name: Commit and push
         run: |
           if git diff --quiet; then
-            echo "No formula changes"
+            echo "No formula or cask changes"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add Formula/infimount.rb
-          git commit -m "chore(formula): update infimount to v${{ steps.formula.outputs.version }}"
+          git add Formula/infimount.rb Casks/infimount.rb
+          git commit -m "chore(tap): update infimount to v${{ steps.formula.outputs.version }}"
           git push
