@@ -1,6 +1,6 @@
 cask "infimount" do
-  version "0.2.3"
-  sha256 "731923b533f9ab34d57ec6dd2426b1c9f6c69622a6dad16c283ad1e3330c155c"
+  version "0.5.0"
+  sha256 "c16b6c4f5c53895fbb6cf0955694feffef793b8d9c5a1c8d63667de53e610a55"
 
   url "https://github.com/infimount/infimount/releases/download/v#{version}/Infimount.dmg"
   name "Infimount"
@@ -13,6 +13,7 @@ cask "infimount" do
   end
 
   auto_updates true
+  depends_on :macos
 
   app "Infimount.app"
 

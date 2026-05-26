@@ -4,18 +4,20 @@ set -euo pipefail
 RELEASE_REPO="${RELEASE_REPO:-infimount/infimount}"
 INPUT_VERSION="${1:-}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-FORMULA_PATH="$ROOT_DIR/Formula/infimount.rb"
-CASK_PATH="$ROOT_DIR/Casks/infimount.rb"
+FORMULA_PATH="${ROOT_DIR}/Formula/infimount.rb"
+CASK_PATH="${ROOT_DIR}/Casks/infimount.rb"
 
-if [[ -n "$INPUT_VERSION" ]]; then
+if [[ -n "${INPUT_VERSION}" ]]
+then
   VERSION="${INPUT_VERSION#v}"
 else
   TAG="$(
-    curl -fsSL "https://api.github.com/repos/${RELEASE_REPO}/releases?per_page=20" \
-      | jq -r '[.[] | select(.draft == false)][0].tag_name'
+    curl -fsSL "https://api.github.com/repos/${RELEASE_REPO}/releases?per_page=20" |
+      jq -r '[.[] | select(.draft == false)][0].tag_name'
   )"
 
-  if [[ -z "$TAG" || "$TAG" == "null" ]]; then
+  if [[ -z "${TAG}" || "${TAG}" == "null" ]]
+  then
     echo "Could not resolve latest release tag from ${RELEASE_REPO}" >&2
     exit 1
   fi
@@ -25,61 +27,59 @@ fi
 
 BASE_URL="https://github.com/${RELEASE_REPO}/releases/download/v${VERSION}"
 SUMS_URL="${BASE_URL}/SHA256SUMS.txt"
-SUMS="$(curl -fsSL "$SUMS_URL")"
-DEB_SHA="$(awk '/Infimount-amd64\.deb$/ { print $1; exit }' <<< "$SUMS")"
-DMG_SHA="$(awk '/Infimount\.dmg$/ { print $1; exit }' <<< "$SUMS")"
+SUMS="$(curl -fsSL "${SUMS_URL}")"
+APPIMAGE_SHA="$(awk '/Infimount-x86_64\.AppImage$/ { print $1; exit }' <<<"${SUMS}")"
+DMG_SHA="$(awk '/Infimount\.dmg$/ { print $1; exit }' <<<"${SUMS}")"
 
-if [[ -z "$DEB_SHA" ]]; then
-  echo "Could not find checksum for Infimount-amd64.deb in $SUMS_URL" >&2
+if [[ -z "${APPIMAGE_SHA}" ]]
+then
+  echo "Could not find checksum for Infimount-x86_64.AppImage in ${SUMS_URL}" >&2
   exit 1
 fi
 
-if [[ -z "$DMG_SHA" ]]; then
-  echo "Could not find checksum for Infimount.dmg in $SUMS_URL" >&2
+if [[ -z "${DMG_SHA}" ]]
+then
+  echo "Could not find checksum for Infimount.dmg in ${SUMS_URL}" >&2
   exit 1
 fi
 
-cat > "$FORMULA_PATH" <<FORMULA
+cat >"${FORMULA_PATH}" <<FORMULA
 class Infimount < Formula
   desc "Desktop file and object storage explorer"
   homepage "https://github.com/infimount/infimount"
-  url "${BASE_URL}/Infimount-amd64.deb"
+  url "${BASE_URL}/Infimount-x86_64.AppImage"
   version "${VERSION}"
-  sha256 "${DEB_SHA}"
+  sha256 "${APPIMAGE_SHA}"
   license "MIT"
 
   depends_on :linux
 
   def install
-    system "ar", "x", "Infimount-amd64.deb"
+    libexec.install "Infimount-x86_64.AppImage" => "infimount.AppImage"
+    chmod 0755, libexec/"infimount.AppImage"
 
-    if File.exist?("data.tar.gz")
-      system "tar", "xf", "data.tar.gz"
-    elsif File.exist?("data.tar.xz")
-      system "tar", "xf", "data.tar.xz"
-    elsif File.exist?("data.tar.zst")
-      system "tar", "--use-compress-program=zstd", "-xf", "data.tar.zst"
-    end
-
-    bin.install "usr/bin/infimount"
-    share.install Dir["usr/share/*"] if Dir.exist?("usr/share")
+    (bin/"infimount").write <<~SH
+      #!/usr/bin/env bash
+      export APPIMAGE_EXTRACT_AND_RUN=1
+      exec "#{libexec}/infimount.AppImage" "\$@"
+    SH
   end
 
   def caveats
     <<~EOS
-      Infimount is a GUI desktop app.
+      Infimount is a GUI desktop app packaged as AppImage.
       Launch from terminal with:
         infimount
     EOS
   end
 
   test do
-    assert_match "Usage:", shell_output("#{bin}/infimount --help", 1) || true
+    assert_match "Version", shell_output("#{bin}/infimount --appimage-version")
   end
 end
 FORMULA
 
-cat > "$CASK_PATH" <<CASK
+cat >"${CASK_PATH}" <<CASK
 cask "infimount" do
   version "${VERSION}"
   sha256 "${DMG_SHA}"
@@ -95,6 +95,7 @@ cask "infimount" do
   end
 
   auto_updates true
+  depends_on :macos
 
   app "Infimount.app"
 
@@ -107,7 +108,8 @@ cask "infimount" do
 end
 CASK
 
-echo "Updated $FORMULA_PATH and $CASK_PATH to v${VERSION}"
-if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
-  echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+echo "Updated ${FORMULA_PATH} and ${CASK_PATH} to v${VERSION}"
+if [[ -n "${GITHUB_OUTPUT:-}" ]]
+then
+  echo "version=${VERSION}" >>"${GITHUB_OUTPUT}"
 fi
