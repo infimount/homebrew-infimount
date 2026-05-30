@@ -37,6 +37,20 @@ jobs:
         id: formula
         run: ./scripts/update-formula.sh "${{ steps.resolve.outputs.value }}"
 
+      - name: Validate formula and cask
+        run: |
+          set -euo pipefail
+          version="${{ steps.formula.outputs.version }}"
+          tag="v${version}"
+          grep -Fq "version \"${version}\"" Formula/infimount.rb
+          grep -Fq "version \"${version}\"" Casks/infimount.rb
+          grep -Fq "releases/download/${tag}/Infimount-x86_64.AppImage" Formula/infimount.rb
+          appimage_sha="$(curl -fsSL "https://github.com/infimount/infimount/releases/download/${tag}/Infimount-x86_64.AppImage.sha256" | awk '{print $1}')"
+          dmg_sha="$(curl -fsSL "https://github.com/infimount/infimount/releases/download/${tag}/Infimount.dmg.sha256" | awk '{print $1}')"
+          grep -Fq "sha256 \"${appimage_sha}\"" Formula/infimount.rb
+          grep -Fq "sha256 \"${dmg_sha}\"" Casks/infimount.rb
+          git diff --check
+
       - name: Commit and push
         run: |
           if git diff --quiet; then
