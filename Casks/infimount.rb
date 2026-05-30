@@ -1,6 +1,6 @@
 cask "infimount" do
-  version "0.6.0"
-  sha256 "4cb8aaa680adfa2d440dd40bdea61c09fe7c3b273395c81a8405981ed9a97018"
+  version "0.7.0"
+  sha256 "889b57d9a403bb503794cc0cc47193ee00ed30e84b9382e3083ac0f958f4a830"
 
   url "https://github.com/infimount/infimount/releases/download/v#{version}/Infimount.dmg"
   name "Infimount"
