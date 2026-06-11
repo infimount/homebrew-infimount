@@ -1,9 +1,9 @@
 class Infimount < Formula
   desc "Desktop file and object storage explorer"
   homepage "https://github.com/infimount/infimount"
-  url "https://github.com/infimount/infimount/releases/download/v0.7.0/Infimount-x86_64.AppImage"
-  version "0.7.0"
-  sha256 "87b096f907fc76da30c90a1ded72bb5635a43672da2fd31d2008bf54425dc298"
+  url "https://github.com/infimount/infimount/releases/download/v0.7.1/Infimount-x86_64.AppImage"
+  version "0.7.1"
+  sha256 "6b39def7ddbc81a9f7db02f029a70297207ca8423f6aa9ae5e6bc4bbb9bcc2b9"
   license "MIT"
 
   depends_on :linux
